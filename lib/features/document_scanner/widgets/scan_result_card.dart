@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../configs/document_parser_config.dart';
 import '../models/document_scan_result.dart';
 
@@ -36,6 +38,15 @@ class _ScanResultCardState extends State<ScanResultCard> {
   double get _rate =>
       widget.config.fields.isEmpty ? 0 : _score / widget.config.fields.length;
 
+  void _showRawOcr() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RawOcrSheet(rawOcrTexts: widget.result.rawOcrTexts),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -56,7 +67,14 @@ class _ScanResultCardState extends State<ScanResultCard> {
           total: widget.config.fields.length,
           rate: _rate,
         ),
-        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _showRawOcr,
+            icon: const Icon(Icons.code, size: 18),
+            label: const Text('View raw OCR'),
+          ),
+        ),
         Expanded(
           child: ListView.separated(
             itemCount: widget.config.fields.length,
@@ -233,6 +251,146 @@ class _FieldRowState extends State<_FieldRow> {
             onPressed: _toggleEdit,
             child: Text(_editing ? 'Save' : 'Edit'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RawOcrSheet extends StatelessWidget {
+  final List<RecognizedText> rawOcrTexts;
+  const _RawOcrSheet({required this.rawOcrTexts});
+
+  void _copyAll(BuildContext context) {
+    final combined = rawOcrTexts.map((r) => r.text).join('\n---\n');
+    Clipboard.setData(ClipboardData(text: combined));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Raw OCR copied')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.3,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (_, controller) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Raw OCR',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Copy all',
+                  icon: const Icon(Icons.copy),
+                  onPressed: () => _copyAll(context),
+                ),
+                IconButton(
+                  tooltip: 'Close',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                controller: controller,
+                itemCount: rawOcrTexts.length,
+                itemBuilder: (_, i) => _RawOcrSection(
+                  index: i + 1,
+                  recognized: rawOcrTexts[i],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RawOcrSection extends StatelessWidget {
+  final int index;
+  final RecognizedText recognized;
+  const _RawOcrSection({required this.index, required this.recognized});
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = [
+      for (final block in recognized.blocks) ...block.lines,
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              'Script #$index  (${lines.length} lines)',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF185FA5),
+              ),
+            ),
+          ),
+          if (lines.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                '(no text detected)',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.black45,
+                ),
+              ),
+            )
+          else
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SelectableText(
+                      line.text,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      'bbox: '
+                      'L${line.boundingBox.left.round()} '
+                      'T${line.boundingBox.top.round()} '
+                      'W${line.boundingBox.width.round()} '
+                      'H${line.boundingBox.height.round()}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          const Divider(height: 16),
         ],
       ),
     );

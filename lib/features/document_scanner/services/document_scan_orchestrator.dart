@@ -47,6 +47,7 @@ class DocumentScanOrchestrator {
       extractionScore: extractionScore,
       totalFields: config.fields.length,
       imagePath: imagePath,
+      rawOcrTexts: recognizedTexts,
     );
   }
 

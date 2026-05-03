@@ -21,8 +21,9 @@ const nidConfig = DocumentParserConfig(
       displayLabel: 'নাম',
       labelAnchors: [
         'নাম:', 'নামঃ', 'নাম :', 'নাম: ',
+        'নাম',
       ],
-      yZone: (0.25, 0.48),
+      yZone: (0.32, 0.44),
       type: FieldType.string,
     ),
     FieldConfig(
@@ -32,7 +33,7 @@ const nidConfig = DocumentParserConfig(
         'Name:', 'NAME:', 'Name :', 'Nane:',
         'Name',
       ],
-      yZone: (0.35, 0.58),
+      yZone: (0.45, 0.55),
       type: FieldType.string,
     ),
     FieldConfig(
@@ -42,7 +43,7 @@ const nidConfig = DocumentParserConfig(
         'পিতা:', 'পিতাঃ', 'পিতা :',
         'পিতা',
       ],
-      yZone: (0.45, 0.68),
+      yZone: (0.55, 0.66),
       type: FieldType.string,
     ),
     FieldConfig(
@@ -52,7 +53,7 @@ const nidConfig = DocumentParserConfig(
         'মাতা:', 'মাতাঃ', 'মাতা :',
         'মাতা',
       ],
-      yZone: (0.55, 0.78),
+      yZone: (0.67, 0.80),
       type: FieldType.string,
     ),
     FieldConfig(
@@ -62,7 +63,7 @@ const nidConfig = DocumentParserConfig(
         'Date of Birth:', 'Date of Birth',
         'DOB:', 'D.O.B:', 'Birth Date:',
       ],
-      yZone: (0.65, 0.88),
+      yZone: (0.80, 0.90),
       type: FieldType.date,
       useEntityExtraction: true,
     ),
@@ -74,7 +75,7 @@ const nidConfig = DocumentParserConfig(
         'ID NO:', 'ID No:',
         '1D NO:', 'NID:',
       ],
-      yZone: (0.82, 0.99),
+      yZone: (0.88, 0.97),
       type: FieldType.digits,
     ),
   ],

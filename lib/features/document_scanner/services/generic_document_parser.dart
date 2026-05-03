@@ -21,6 +21,11 @@ class GenericDocumentParser {
 
     final result = <String, String?>{};
 
+    final globalAnchors = <String>{
+      for (final f in config.fields)
+        for (final a in f.labelAnchors) a.trim().toLowerCase(),
+    };
+
     for (final field in config.fields) {
       String strategy = 'none';
       String? value = _extractByLabel(fullText, field.labelAnchors);
@@ -32,6 +37,7 @@ class GenericDocumentParser {
           yZone: field.yZone!,
           photoXBoundary: config.photoXBoundary,
           imageSize: imageSize,
+          globalAnchors: globalAnchors,
         );
         if (!_isEmpty(value)) strategy = 'zone';
       }
@@ -83,12 +89,13 @@ class GenericDocumentParser {
     required (double yMin, double yMax) yZone,
     required double photoXBoundary,
     required Size imageSize,
+    required Set<String> globalAnchors,
   }) {
     final h = imageSize.height;
     final w = imageSize.width;
     final (yMin, yMax) = yZone;
 
-    final candidates = <({String text, double x, double y})>[];
+    final raw = <({String text, double x, double y})>[];
 
     for (final recognized in recognizedTexts) {
       for (final block in recognized.blocks) {
@@ -98,16 +105,48 @@ class GenericDocumentParser {
           final xNorm = (rect.left + rect.width / 2) / w;
 
           if (yNorm >= yMin && yNorm <= yMax && xNorm > photoXBoundary) {
-            candidates.add((text: line.text, x: xNorm, y: yNorm));
+            raw.add((text: line.text, x: xNorm, y: yNorm));
           }
         }
       }
     }
 
-    if (candidates.isEmpty) return null;
+    if (raw.isEmpty) return null;
 
-    candidates.sort((a, b) => a.x.compareTo(b.x));
-    return candidates.map((c) => c.text).join(' ').trim();
+    final seen = <String>{};
+    final filtered = <({String text, double x, double y})>[];
+    for (final c in raw) {
+      final t = c.text.trim();
+      if (t.isEmpty) continue;
+      if (globalAnchors.contains(t.toLowerCase())) continue;
+      if (t.replaceAll(RegExp(r'\s'), '').length < 4) continue;
+      if (!seen.add(t)) continue;
+      filtered.add(c);
+    }
+
+    if (filtered.isEmpty) return null;
+
+    filtered.sort((a, b) {
+      final dy = a.y.compareTo(b.y);
+      return dy != 0 ? dy : a.x.compareTo(b.x);
+    });
+
+    if (filtered.length == 1) return filtered.first.text.trim();
+
+    final wrapTolerance = 0.05;
+    bool allAdjacent = true;
+    for (int i = 1; i < filtered.length; i++) {
+      if ((filtered[i].y - filtered[i - 1].y).abs() > wrapTolerance) {
+        allAdjacent = false;
+        break;
+      }
+    }
+    if (allAdjacent) {
+      return filtered.map((c) => c.text.trim()).join(' ');
+    }
+
+    filtered.sort((a, b) => b.text.length.compareTo(a.text.length));
+    return filtered.first.text.trim();
   }
 
   String? _applyType(String? raw, FieldType type) {

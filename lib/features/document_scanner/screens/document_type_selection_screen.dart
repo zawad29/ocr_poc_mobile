@@ -95,6 +95,8 @@ class _TypeCard extends StatelessWidget {
     switch (type) {
       case DocumentType.bangladeshNid:
         return Icons.badge_outlined;
+      case DocumentType.plainText:
+        return Icons.text_snippet_outlined;
     }
   }
 

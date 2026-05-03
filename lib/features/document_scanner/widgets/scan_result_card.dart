@@ -49,6 +49,7 @@ class _ScanResultCardState extends State<ScanResultCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hasFields = widget.config.fields.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -62,34 +63,44 @@ class _ScanResultCardState extends State<ScanResultCard> {
             ),
           ),
         const SizedBox(height: 12),
-        _ScoreBar(
-          score: _score,
-          total: widget.config.fields.length,
-          rate: _rate,
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _showRawOcr,
-            icon: const Icon(Icons.code, size: 18),
-            label: const Text('View raw OCR'),
+        if (hasFields)
+          _ScoreBar(
+            score: _score,
+            total: widget.config.fields.length,
+            rate: _rate,
           ),
-        ),
+        if (hasFields)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _showRawOcr,
+              icon: const Icon(Icons.code, size: 18),
+              label: const Text('View raw OCR'),
+            ),
+          ),
         Expanded(
-          child: ListView.separated(
-            itemCount: widget.config.fields.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (_, i) {
-              final field = widget.config.fields[i];
-              return _FieldRow(
-                label: field.displayLabel,
-                value: _fields[field.fieldKey],
-                onChanged: (v) => setState(() {
-                  _fields[field.fieldKey] = v.isEmpty ? null : v;
-                }),
-              );
-            },
-          ),
+          child: hasFields
+              ? ListView.separated(
+                  itemCount: widget.config.fields.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final field = widget.config.fields[i];
+                    return _FieldRow(
+                      label: field.displayLabel,
+                      value: _fields[field.fieldKey],
+                      onChanged: (v) => setState(() {
+                        _fields[field.fieldKey] = v.isEmpty ? null : v;
+                      }),
+                    );
+                  },
+                )
+              : ListView.builder(
+                  itemCount: widget.result.rawOcrTexts.length,
+                  itemBuilder: (_, i) => _RawOcrSection(
+                    index: i + 1,
+                    recognized: widget.result.rawOcrTexts[i],
+                  ),
+                ),
         ),
         Container(
           margin: const EdgeInsets.symmetric(vertical: 12),
@@ -98,9 +109,11 @@ class _ScanResultCardState extends State<ScanResultCard> {
             color: const Color(0xFFFAEEDA),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text(
-            'Review fields before confirming',
-            style: TextStyle(color: Color(0xFF8A5A00)),
+          child: Text(
+            hasFields
+                ? 'Review fields before confirming'
+                : 'Raw OCR captured — review above',
+            style: const TextStyle(color: Color(0xFF8A5A00)),
           ),
         ),
         Row(

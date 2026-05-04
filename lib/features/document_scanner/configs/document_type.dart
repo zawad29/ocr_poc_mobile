@@ -1,10 +1,12 @@
 import 'document_parser_config.dart';
+import 'educational_certificate_config.dart';
 import 'nid_config.dart';
 import 'plaintext_config.dart';
 
 enum DocumentType {
   bangladeshNid,
   plainText,
+  educationalCertificate,
 }
 
 extension DocumentTypeExtension on DocumentType {
@@ -14,6 +16,8 @@ extension DocumentTypeExtension on DocumentType {
         return 'Bangladesh NID';
       case DocumentType.plainText:
         return 'Plain Text OCR';
+      case DocumentType.educationalCertificate:
+        return 'Educational Certificate';
     }
   }
 
@@ -23,6 +27,8 @@ extension DocumentTypeExtension on DocumentType {
         return 'Place the NID card flat and ensure all text is visible';
       case DocumentType.plainText:
         return 'Position the document so all text is visible and well-lit';
+      case DocumentType.educationalCertificate:
+        return 'Place the certificate flat with all printed text visible';
     }
   }
 }
@@ -30,6 +36,7 @@ extension DocumentTypeExtension on DocumentType {
 final Map<DocumentType, DocumentParserConfig> configRegistry = {
   DocumentType.bangladeshNid: nidConfig,
   DocumentType.plainText: plainTextConfig,
+  DocumentType.educationalCertificate: educationalCertificateConfig,
 };
 
 DocumentParserConfig configFor(DocumentType type) {

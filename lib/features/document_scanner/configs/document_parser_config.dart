@@ -14,6 +14,7 @@ class FieldConfig {
   final (double yMin, double yMax)? yZone;
   final FieldType type;
   final bool useEntityExtraction;
+  final RegExp? valueRegex;
 
   const FieldConfig({
     required this.fieldKey,
@@ -22,6 +23,7 @@ class FieldConfig {
     this.yZone,
     this.type = FieldType.string,
     this.useEntityExtraction = false,
+    this.valueRegex,
   });
 }
 

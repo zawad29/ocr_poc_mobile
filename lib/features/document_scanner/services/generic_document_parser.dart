@@ -28,8 +28,20 @@ class GenericDocumentParser {
 
     for (final field in config.fields) {
       String strategy = 'none';
-      String? value = _extractByLabel(fullText, field.labelAnchors);
-      if (!_isEmpty(value)) strategy = 'label';
+      String? value;
+
+      if (field.valueRegex != null) {
+        final m = field.valueRegex!.firstMatch(fullText);
+        if (m != null && m.groupCount >= 1) {
+          value = m.group(1)?.trim();
+          if (!_isEmpty(value)) strategy = 'regex';
+        }
+      }
+
+      if (_isEmpty(value)) {
+        value = _extractByLabel(fullText, field.labelAnchors);
+        if (!_isEmpty(value)) strategy = 'label';
+      }
 
       if (_isEmpty(value) && field.yZone != null) {
         value = _extractByZone(

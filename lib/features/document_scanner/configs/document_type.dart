@@ -1,3 +1,4 @@
+import 'birth_registration_config.dart';
 import 'document_parser_config.dart';
 import 'educational_certificate_config.dart';
 import 'nid_config.dart';
@@ -7,6 +8,7 @@ enum DocumentType {
   bangladeshNid,
   plainText,
   educationalCertificate,
+  birthRegistrationCertificate,
 }
 
 extension DocumentTypeExtension on DocumentType {
@@ -18,6 +20,8 @@ extension DocumentTypeExtension on DocumentType {
         return 'Plain Text OCR';
       case DocumentType.educationalCertificate:
         return 'Educational Certificate';
+      case DocumentType.birthRegistrationCertificate:
+        return 'Birth Registration Certificate';
     }
   }
 
@@ -29,6 +33,8 @@ extension DocumentTypeExtension on DocumentType {
         return 'Position the document so all text is visible and well-lit';
       case DocumentType.educationalCertificate:
         return 'Place the certificate flat with all printed text visible';
+      case DocumentType.birthRegistrationCertificate:
+        return 'Place the birth registration verification record flat in good light';
     }
   }
 }
@@ -37,6 +43,7 @@ final Map<DocumentType, DocumentParserConfig> configRegistry = {
   DocumentType.bangladeshNid: nidConfig,
   DocumentType.plainText: plainTextConfig,
   DocumentType.educationalCertificate: educationalCertificateConfig,
+  DocumentType.birthRegistrationCertificate: birthRegistrationConfig,
 };
 
 DocumentParserConfig configFor(DocumentType type) {

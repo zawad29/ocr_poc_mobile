@@ -99,6 +99,8 @@ class _TypeCard extends StatelessWidget {
         return Icons.text_snippet_outlined;
       case DocumentType.educationalCertificate:
         return Icons.school_outlined;
+      case DocumentType.birthRegistrationCertificate:
+        return Icons.child_care_outlined;
     }
   }
 

@@ -26,6 +26,9 @@ class GenericDocumentParser {
         for (final a in f.labelAnchors) a.trim().toLowerCase(),
     };
 
+    final double Function(double) mapY =
+        _computeYMapping(recognizedTexts, config, imageSize);
+
     for (final field in config.fields) {
       String strategy = 'none';
       String? value;
@@ -44,9 +47,11 @@ class GenericDocumentParser {
       }
 
       if (_isEmpty(value) && field.yZone != null) {
+        final (yMin, yMax) = field.yZone!;
         value = _extractByZone(
           recognizedTexts: recognizedTexts,
-          yZone: field.yZone!,
+          yZone: (mapY(yMin), mapY(yMax)),
+          xZone: field.xZone,
           photoXBoundary: config.photoXBoundary,
           imageSize: imageSize,
           globalAnchors: globalAnchors,
@@ -96,9 +101,63 @@ class GenericDocumentParser {
     return null;
   }
 
+  double Function(double) _computeYMapping(
+    List<RecognizedText> recognizedTexts,
+    DocumentParserConfig config,
+    Size imageSize,
+  ) {
+    final h = imageSize.height;
+    final topActual = _findAnchorY(recognizedTexts, config.yAnchor, h);
+    final bottomActual =
+        _findAnchorY(recognizedTexts, config.yAnchorBottom, h);
+    final topExpected = config.yAnchorExpected;
+    final bottomExpected = config.yAnchorBottomExpected;
+
+    if (topActual != null &&
+        bottomActual != null &&
+        topExpected != null &&
+        bottomExpected != null &&
+        (bottomExpected - topExpected).abs() > 1e-6) {
+      final scale =
+          (bottomActual - topActual) / (bottomExpected - topExpected);
+      debugPrint(
+          'yAnchor remap: top=${topActual.toStringAsFixed(4)} bottom=${bottomActual.toStringAsFixed(4)} scale=${scale.toStringAsFixed(3)}');
+      return (y) => topActual + (y - topExpected) * scale;
+    }
+
+    if (topActual != null && topExpected != null) {
+      final offset = topActual - topExpected;
+      debugPrint('yAnchor offset=${offset.toStringAsFixed(4)} (single-anchor)');
+      return (y) => y + offset;
+    }
+
+    if (config.yAnchor != null) {
+      debugPrint('yAnchor "${config.yAnchor}" not found — no remap');
+    }
+    return (y) => y;
+  }
+
+  double? _findAnchorY(
+      List<RecognizedText> recognizedTexts, String? anchor, double h) {
+    if (anchor == null) return null;
+    final needle = anchor.toLowerCase();
+    for (final recognized in recognizedTexts) {
+      for (final block in recognized.blocks) {
+        for (final line in block.lines) {
+          if (line.text.toLowerCase().contains(needle)) {
+            final rect = line.boundingBox;
+            return (rect.top + rect.height / 2) / h;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   String? _extractByZone({
     required List<RecognizedText> recognizedTexts,
     required (double yMin, double yMax) yZone,
+    (double xMin, double xMax)? xZone,
     required double photoXBoundary,
     required Size imageSize,
     required Set<String> globalAnchors,
@@ -116,9 +175,13 @@ class GenericDocumentParser {
           final yNorm = (rect.top + rect.height / 2) / h;
           final xNorm = (rect.left + rect.width / 2) / w;
 
-          if (yNorm >= yMin && yNorm <= yMax && xNorm > photoXBoundary) {
-            raw.add((text: line.text, x: xNorm, y: yNorm));
+          if (yNorm < yMin || yNorm > yMax) continue;
+          if (xZone != null) {
+            if (xNorm < xZone.$1 || xNorm > xZone.$2) continue;
+          } else {
+            if (xNorm <= photoXBoundary) continue;
           }
+          raw.add((text: line.text, x: xNorm, y: yNorm));
         }
       }
     }
@@ -131,7 +194,7 @@ class GenericDocumentParser {
       final t = c.text.trim();
       if (t.isEmpty) continue;
       if (globalAnchors.contains(t.toLowerCase())) continue;
-      if (t.replaceAll(RegExp(r'\s'), '').length < 4) continue;
+      if (xZone == null && t.replaceAll(RegExp(r'\s'), '').length < 4) continue;
       if (!seen.add(t)) continue;
       filtered.add(c);
     }

@@ -78,8 +78,8 @@ screen auto-includes the new type.
   scanner plugin until a different Stage 1 is wired.
 - **Google Play Services required** for Document Scanner. Bare AOSP
   emulator won't work — use real device or emulator with Play Store.
-- **`minSdk` pinned to 21** explicitly in build.gradle.kts. ML Kit
-  requires it.
+- **`minSdk` pinned to 26** explicitly in build.gradle.kts. Required by
+  `google_mlkit_entity_extraction` 0.15.x.
 - **Y-zones in nid_config are estimates.** Calibrate against real card
   images. Debug logs print bbox positions per line.
 

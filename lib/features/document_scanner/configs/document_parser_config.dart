@@ -17,6 +17,15 @@ class FieldConfig {
   final bool useEntityExtraction;
   final RegExp? valueRegex;
 
+  /// Whitelist of characters allowed in the final value. Anything not matching
+  /// is stripped during post-extraction. Null = no character filtering.
+  final RegExp? allowedCharsRegex;
+
+  /// For [FieldType.digits]: acceptable digit-string lengths. If the digits
+  /// stripped from the OCR don't match one of these, the field is nulled out
+  /// rather than handing back a wrong-length number.
+  final List<int>? validDigitLengths;
+
   const FieldConfig({
     required this.fieldKey,
     required this.displayLabel,
@@ -26,6 +35,8 @@ class FieldConfig {
     this.type = FieldType.string,
     this.useEntityExtraction = false,
     this.valueRegex,
+    this.allowedCharsRegex,
+    this.validDigitLengths,
   });
 }
 

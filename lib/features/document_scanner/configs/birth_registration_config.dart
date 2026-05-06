@@ -1,12 +1,13 @@
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'document_parser_config.dart';
 import 'document_type.dart';
+import 'field_char_sets.dart';
 
 /// Bangladesh Birth Registration Record Verification parser configuration.
 /// Document is strongly columnar (3-col top table, 4-col bottom table) so
 /// fields rely on (yZone, xZone) spatial extraction rather than label anchors.
 /// Y/X bounds are estimates — calibrate against real scans via debug bbox logs.
-const birthRegistrationConfig = DocumentParserConfig(
+final birthRegistrationConfig = DocumentParserConfig(
   documentType: DocumentType.birthRegistrationCertificate,
   photoXBoundary: 0.0,
   yAnchor: 'REGISTERED',
@@ -35,6 +36,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.335, 0.365),
       xZone: (0.35, 0.65),
       type: FieldType.digits,
+      validDigitLengths: [17],
     ),
     FieldConfig(
       fieldKey: 'sex',
@@ -52,6 +54,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.37, 0.42),
       xZone: (0.20, 0.36),
       type: FieldType.string,
+      allowedCharsRegex: bengaliChars,
     ),
     // Bottom table — English value column
     FieldConfig(
@@ -61,6 +64,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.37, 0.42),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
     FieldConfig(
       fieldKey: 'place_of_birth',
@@ -69,6 +73,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.42, 0.46),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
     FieldConfig(
       fieldKey: 'mother_name',
@@ -77,6 +82,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.46, 0.51),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
     FieldConfig(
       fieldKey: 'mother_nationality',
@@ -85,6 +91,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.51, 0.55),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
     FieldConfig(
       fieldKey: 'father_name',
@@ -93,6 +100,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.55, 0.61),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
     FieldConfig(
       fieldKey: 'father_nationality',
@@ -101,6 +109,7 @@ const birthRegistrationConfig = DocumentParserConfig(
       yZone: (0.61, 0.65),
       xZone: (0.52, 0.78),
       type: FieldType.string,
+      allowedCharsRegex: latinTextChars,
     ),
   ],
 );

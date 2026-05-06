@@ -103,7 +103,7 @@ class GenericDocumentParser {
         if (!_isEmpty(value)) strategy = 'entity-fallback';
       }
 
-      final processed = _applyType(value, field.type);
+      final processed = _applyType(value, field);
       result[field.fieldKey] = processed;
       debugPrint(
           '  [${field.fieldKey}] strategy=$strategy raw="${value ?? ''}" final="${processed ?? ''}"');
@@ -327,21 +327,34 @@ class GenericDocumentParser {
   }
 
   /// Post-extraction normalisation. Runs after every strategy succeeds.
-  /// digits: strip everything that isn't 0-9. The 10/13/17 lengths line up
-  /// with known BD ID number formats (NID old, NID smart, BRN) — a clean
-  /// match passes through; otherwise we still return whatever digits we
-  /// found so the user can see and correct it in the result card.
-  String? _applyType(String? raw, FieldType type) {
+  ///
+  /// - string: optionally filter to [FieldConfig.allowedCharsRegex] (e.g. keep
+  ///   only Bengali letters for a Bengali name). Whitespace is collapsed.
+  /// - digits: strip everything that isn't 0-9, then enforce
+  ///   [FieldConfig.validDigitLengths] if set. ID numbers are critical — a
+  ///   wrong-length value is nulled out rather than handed back as if valid.
+  /// - date: untouched (entity extraction handles normalisation upstream).
+  String? _applyType(String? raw, FieldConfig field) {
     if (_isEmpty(raw)) return null;
-    switch (type) {
+    switch (field.type) {
       case FieldType.string:
-        return raw!.trim();
+        var s = raw!;
+        if (field.allowedCharsRegex != null) {
+          final allowed = field.allowedCharsRegex!;
+          final buf = StringBuffer();
+          for (final ch in s.split('')) {
+            if (allowed.hasMatch(ch)) buf.write(ch);
+          }
+          s = buf.toString();
+        }
+        s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+        return s.isEmpty ? null : s;
       case FieldType.digits:
         final digits = raw!.replaceAll(RegExp(r'\D'), '');
-        if (digits.length == 10 || digits.length == 13 || digits.length == 17) {
-          return digits;
-        }
-        return digits.isEmpty ? null : digits;
+        if (digits.isEmpty) return null;
+        final lengths = field.validDigitLengths;
+        if (lengths != null && !lengths.contains(digits.length)) return null;
+        return digits;
       case FieldType.date:
         return raw!.trim();
     }

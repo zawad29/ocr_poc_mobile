@@ -33,19 +33,32 @@ Three parsing strategies tried per field, in order:
 
 ## Layout
 
+`lib/core/ocr/` is a self-contained, UI-free, copy-paste-ready OCR
+library — designed to be lifted wholesale into a host enterprise app.
+The demo UI under `lib/features/document_scanner/` is POC-only and is
+**not part of the library**. Host integration guide lives in-folder:
+[`lib/core/ocr/INTEGRATION.md`](lib/core/ocr/INTEGRATION.md).
+
 ```
-lib/features/document_scanner/
+lib/core/ocr/
+  ocr.dart                        ← public barrel — the only file hosts (and the demo) import
+  INTEGRATION.md                  Host-integration guide
   configs/
-    document_type.dart            DocumentType enum + configRegistry + configFor()
+    document_type.dart            DocumentType enum + extension + configRegistry + configFor()
     document_parser_config.dart   FieldConfig, FieldType, DocumentParserConfig
-    nid_config.dart               BD NID-specific config
+    field_char_sets.dart          Shared character whitelists
+    nid_config.dart               BD NID config
+    educational_certificate_config.dart
+    birth_registration_config.dart
+    plaintext_config.dart
   models/document_scan_result.dart
   services/
-    document_scan_service.dart      Stage 1 wrapper (ML Kit Document Scanner)
+    document_scan_orchestrator.dart Public entry — wires all three stages
+    generic_document_parser.dart    Stage 3 engine — DO NOT add doc-specific logic
+    document_scan_service.dart      Stage 1 (ML Kit Document Scanner)
     text_recognition_service.dart   Stage 2 (multi-script recognizer pool)
     entity_extraction_service.dart  Stage 3C (ML Kit Entity Extraction)
-    generic_document_parser.dart    Stage 3 engine — DO NOT add doc-specific logic
-    document_scan_orchestrator.dart Wires all three stages
+lib/features/document_scanner/
   screens/
     document_type_selection_screen.dart  Screen 1
     document_scanner_screen.dart         Screens 2/3/4
@@ -54,15 +67,30 @@ lib/main.dart                            Entry → DocumentTypeSelectionScreen
 plan.md                                  Original implementation plan
 ```
 
+### Public surface
+
+Hosts (and the demo) import only `package:ocr_app/core/ocr/ocr.dart`.
+The barrel exports `DocumentScanOrchestrator`, `DocumentScanResult`,
+`DocumentType` + `DocumentTypeExtension`, `configFor`, and the
+`DocumentParserConfig` / `FieldConfig` / `FieldType` types. Everything
+else (internal services, the raw `configRegistry`, per-document config
+files) is implementation detail and is not exported. This boundary is
+verified by `grep -r "package:ocr_app/core/ocr/" lib/features lib/main.dart`
+returning only `ocr.dart` paths.
+
+Inside `core/ocr/`, all imports are relative — copying the folder into a
+host app works as-is, no rewrites needed.
+
 ## Adding a new document type
 
-1. Add value to `DocumentType` enum in [configs/document_type.dart](lib/features/document_scanner/configs/document_type.dart).
-2. Add `displayName` + `scanInstruction` cases in extension.
-3. Create `configs/<type>_config.dart` with a `DocumentParserConfig`.
-4. Register in `configRegistry` map.
+1. Add value to `DocumentType` enum in [core/ocr/configs/document_type.dart](lib/core/ocr/configs/document_type.dart).
+2. Add `displayName` + `scanInstruction` cases in `DocumentTypeExtension` (same file).
+3. Create `core/ocr/configs/<type>_config.dart` with a `DocumentParserConfig`.
+4. Register it in the `configRegistry` map in the same `document_type.dart`.
 
-Zero changes to engine, services, screens, or widgets. Type-selection
-screen auto-includes the new type.
+New configs do **not** need to be added to `ocr.dart` — hosts reach them
+via `configFor(type)`. Zero changes to engine, services, screens, or
+widgets. Type-selection screen auto-includes the new type.
 
 ## Gotchas
 
@@ -94,17 +122,17 @@ flutter clean && flutter run  # use clean when changing native deps
 ## Debug logging
 
 `debugPrint` calls in:
-- `text_recognition_service.dart` — raw OCR per script + per-line bbox
-- `generic_document_parser.dart` — per-field strategy + raw + final
-- `document_scan_orchestrator.dart` — image path + extraction score
+- `core/ocr/services/text_recognition_service.dart` — raw OCR per script + per-line bbox
+- `core/ocr/services/generic_document_parser.dart` — per-field strategy + raw + final
+- `core/ocr/services/document_scan_orchestrator.dart` — image path + extraction score
 
 `debugPrint` is no-op in release. View via `flutter run` console or
 `adb logcat -s flutter`.
 
 ## Conventions
 
-- Folder named `document_scanner`, not `nid_scanner`. Don't rename — it's
-  generic by design.
+- OCR service folder is `core/ocr/`, not `core/nid_scanner/` or similar.
+  Don't rename — the engine is generic by design.
 - `GenericDocumentParser` must never branch on document type. If a
   document needs custom logic, add an optional `customParser` callback
   field on `DocumentParserConfig`.

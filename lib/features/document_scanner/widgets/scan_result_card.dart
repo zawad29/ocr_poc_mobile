@@ -2,8 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import '../configs/document_parser_config.dart';
-import '../models/document_scan_result.dart';
+import 'package:ocr_app/core/ocr/ocr.dart';
 
 class ScanResultCard extends StatefulWidget {
   final DocumentScanResult result;

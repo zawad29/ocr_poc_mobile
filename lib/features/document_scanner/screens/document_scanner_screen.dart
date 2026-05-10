@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../configs/document_type.dart';
-import '../models/document_scan_result.dart';
-import '../services/document_scan_orchestrator.dart';
+import 'package:ocr_app/core/ocr/ocr.dart';
 import '../widgets/scan_result_card.dart';
 
 class DocumentScannerScreen extends StatefulWidget {

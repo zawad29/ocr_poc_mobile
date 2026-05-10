@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../configs/document_type.dart';
+import 'package:ocr_app/core/ocr/ocr.dart';
 import 'document_scanner_screen.dart';
 
 const _primary = Color(0xFF185FA5);
@@ -49,14 +49,10 @@ class _DocumentTypeSelectionScreenState
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (_, i) {
                     final type = types[i];
-                    final available = configRegistry.containsKey(type);
                     return _TypeCard(
                       type: type,
-                      available: available,
                       selected: _selected == type,
-                      onTap: available
-                          ? () => setState(() => _selected = type)
-                          : null,
+                      onTap: () => setState(() => _selected = type),
                     );
                   },
                 ),
@@ -80,13 +76,11 @@ class _DocumentTypeSelectionScreenState
 
 class _TypeCard extends StatelessWidget {
   final DocumentType type;
-  final bool available;
   final bool selected;
   final VoidCallback? onTap;
 
   const _TypeCard({
     required this.type,
-    required this.available,
     required this.selected,
     required this.onTap,
   });
@@ -120,7 +114,7 @@ class _TypeCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(_icon, size: 32, color: available ? _primary : Colors.black38),
+            Icon(_icon, size: 32, color: _primary),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -128,10 +122,10 @@ class _TypeCard extends StatelessWidget {
                 children: [
                   Text(
                     type.displayName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: available ? Colors.black87 : Colors.black45,
+                      color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -148,10 +142,7 @@ class _TypeCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            if (!available)
-              const _Badge(label: 'Soon', muted: true)
-            else if (selected)
-              const _Badge(label: 'Selected', muted: false),
+            if (selected) const _Badge(label: 'Selected', muted: false),
           ],
         ),
       ),

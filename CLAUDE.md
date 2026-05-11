@@ -43,6 +43,7 @@ The demo UI under `lib/features/document_scanner/` is POC-only and is
 lib/core/ocr/
   ocr.dart                        ← public barrel — the only file hosts (and the demo) import
   INTEGRATION.md                  Host-integration guide
+  exceptions.dart                 OcrUnsupportedDeviceException
   configs/
     document_type.dart            DocumentType enum + extension + configRegistry + configFor()
     document_parser_config.dart   FieldConfig, FieldType, DocumentParserConfig
@@ -106,8 +107,10 @@ widgets. Type-selection screen auto-includes the new type.
   scanner plugin until a different Stage 1 is wired.
 - **Google Play Services required** for Document Scanner. Bare AOSP
   emulator won't work — use real device or emulator with Play Store.
-- **`minSdk` pinned to 26** explicitly in build.gradle.kts. Required by
-  `google_mlkit_entity_extraction` 0.15.x.
+- **ML Kit plugins require Android API 21+ and Google Play Services.**
+  `scan()` throws `OcrUnsupportedDeviceException` on incompatible devices or
+  missing Play Services — callers must catch it. The POC's own `minSdk = 26`
+  is a conservative choice; hosts may use 21+.
 - **Y-zones in nid_config are estimates.** Calibrate against real card
   images. Debug logs print bbox positions per line.
 

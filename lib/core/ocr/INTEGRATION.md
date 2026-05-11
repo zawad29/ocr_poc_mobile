@@ -78,7 +78,8 @@ Then `flutter pub get`.
 
 `android/app/build.gradle.kts`:
 
-1. **`minSdk = 26`** is required by `google_mlkit_entity_extraction` 0.15.x.
+1. Set `minSdk = 21` or higher (all ML Kit plugins require API 21+).
+   If your app already targets a higher `minSdk`, no change is needed.
 2. Add the Devanagari recognizer dep (Latin ships with the base
    `text-recognition` module; non-Latin scripts each need a separate
    native dep):
@@ -96,16 +97,38 @@ If you add a new document type whose `scripts` list includes Chinese,
 Japanese, or Korean, add the matching `text-recognition-<script>`
 Gradle dep too.
 
-## Platform constraints
+## Platform constraints and device compatibility
 
 - **Android only.** The `google_mlkit_document_scanner` plugin has no
-  iOS implementation. iOS builds will fail until a different Stage 1
-  is wired in.
+  iOS implementation. `DocumentScanOrchestrator.isSupported()` returns
+  `false` on iOS so you can gate the UI accordingly. iOS builds will fail
+  at link time until a different Stage 1 is wired in.
 - **Google Play Services required.** The Document Scanner module is
   delivered via Play Services — bare AOSP emulators won't work. Use a
   real device or an emulator image with Play Store.
+- **API 21+ required at runtime.** The ML Kit plugins declare
+  `minSdkVersion 21`. If your host app has a lower `minSdk`, older
+  devices may have the app installed but the OCR feature will fail.
 - **First launch downloads models.** `google_mlkit_entity_extraction`
   downloads its model on first use. After that everything is offline.
+
+### Handling unsupported devices
+
+`scan()` throws `OcrUnsupportedDeviceException` if Google Play Services are
+missing or incompatible at runtime (covers devices with outdated Play Services
+or API levels below the ML Kit minimum). Callers must catch it:
+
+```dart
+try {
+  final result = await orchestrator.scan(DocumentType.bangladeshNid);
+  if (result == null) return; // user cancelled
+  // use result...
+} on OcrUnsupportedDeviceException catch (e) {
+  // show "not available on this device" message
+} catch (e) {
+  // other unexpected errors
+}
+```
 
 ## Usage
 
@@ -127,6 +150,8 @@ class MyScanFlow {
       // result.isComplete       : true iff every field was extracted
       // result.imagePath        : on-disk path to the cropped page image
       // result.documentType     : echoes the enum you passed in
+    } on OcrUnsupportedDeviceException {
+      // device not supported — show fallback UI
     } finally {
       _orchestrator.dispose(); // releases native ML Kit recognizers
     }
@@ -155,8 +180,8 @@ This way, adding a new document type requires no UI changes.
 ## Cancellation & errors
 
 - User cancels the scanner sheet → `scan()` returns `null`.
-- ML Kit / I/O errors → `scan()` throws. Wrap in `try/catch` and surface
-  an error state to the user.
+- Device not supported / Play Services unavailable → `scan()` throws `OcrUnsupportedDeviceException`. **Callers must catch this.**
+- Other ML Kit / I/O errors → `scan()` throws. Wrap in a general `catch` block.
 
 ## Adding a new document type
 

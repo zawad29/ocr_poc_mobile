@@ -8,6 +8,7 @@
 /// the raw registry map) is an implementation detail and may change.
 library;
 
+export 'exceptions.dart';
 export 'configs/document_type.dart' show DocumentType, DocumentTypeExtension, configFor;
 export 'configs/document_parser_config.dart' show DocumentParserConfig, FieldConfig, FieldType;
 export 'models/document_scan_result.dart';

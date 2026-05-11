@@ -69,7 +69,7 @@ Add to your host's `pubspec.yaml` under `dependencies:`:
 ```yaml
 google_mlkit_document_scanner: ^0.4.1
 google_mlkit_text_recognition: ^0.15.1
-google_mlkit_entity_extraction: ^0.15.3
+google_mlkit_entity_extraction: ^0.15.1
 ```
 
 Then `flutter pub get`.
